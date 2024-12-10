@@ -1,40 +1,47 @@
 <template>
-    <div>
+    <div  style="border: 3px #0bf1af solid;">
         <el-container>
-            <el-header>
+            <el-header style="border-radius: 10px;background-color: #0bf1af;">
                 <div style="float: left;">
-                    <el-button @click="backToCategory" type="info">&lt;&lt;返回</el-button>
+                    <span class="backSpan" @click="backToCategory" type="info">&lt;&lt;返回 </span>
+                    <span v-if="type" style="font-size: 15px;color: black;"> | 添加分类</span>
+                    <span v-else style="font-size: 15px;color: black;"> | 修改分类</span>
                 </div>
             </el-header>
             <el-main>
-                <el-form label-width="80px" :model="addCategory">
-                    <el-form-item label="分类名" prop="name">
-                        <el-input v-model="addCategory.name"></el-input>
+                <el-form class="addCateForm" label-width="80px" :model="addCategory">
+                    <el-form-item label="分类名:" prop="name" style="width: 500px;">
+                        <el-input clearable v-model="addCategory.name"></el-input>
                     </el-form-item>
-                    <el-form-item label="所属类型" prop="type">
-                        <el-select v-model="addCategory.show" placeholder="请选择" @change="getLabel">
+                    <el-form-item label="所属类型:" prop="type" closeable style="width: 300px;">
+                        <el-select clearable v-model="addCategory.show" placeholder="请选择" @change="getLabel">
                             <el-option v-for="item in options" :key="item.value" :value="item.value"
                                 :label="item.label">
                             </el-option>
                         </el-select>
                     </el-form-item>
-                    <el-form-item label="分类描述" prop="description">
-                        <el-input v-model="addCategory.description"></el-input>
+                    <el-form-item label="分类描述:" prop="description" style="width: 500px;">
+                        <el-input clearable v-model="addCategory.description" type="textarea" :rows="3" maxlength="200"
+                            placeholder="套餐描述，最长200字"></el-input>
                     </el-form-item>
-                    <el-form-item label="菜品图片:" prop="image">
+                    <el-form-item label="菜品图片:" prop="image" style="width: 500px;">
                         <image-upload ref="imageUpload" :prop-image-url="imageUrl" @imageChange="imageChange">
-                            图片大小不超过2M<br>仅能上传 PNG JPEG JPG类型图片<br>建议上传200*200或300*300尺寸的图片
+                            <span v-if="addCategory.image === '' || addCategory.image === null">
+                                图片大小不超过2M，且仅能上传 PNG JPEG JPG类型图片
+                            </span>
                         </image-upload>
                     </el-form-item>
-                    <el-button type="primary" @click="handleAddCateAndBack">
-                        <span v-if="type">添加</span>
-                        <span v-else>修改</span>
-                    </el-button>
-                    <span v-if="type">
-                        <el-button type="primary" @click="handleAddCate" style="margin-left: 10px;">
-                            <span>继续添加</span>
+                    <div style="position: relative;top: -80px;left: -20px;">
+                        <el-button type="primary" @click="handleAddCateAndBack" style="width:100px;">
+                            <span v-if="type">添加</span>
+                            <span v-else>修改</span>
                         </el-button>
-                    </span>
+                        <span v-if="type">
+                            <el-button type="primary" @click="handleAddCate" style="margin-left: 20px;">
+                                <span>继续添加</span>
+                            </el-button>
+                        </span>
+                    </div>
                 </el-form>
             </el-main>
         </el-container>
@@ -57,7 +64,6 @@ import ImageUpload from '@/components/ImgUpload/index.vue'
 export default class extends Vue {
 
     private options = [
-        { value: '3', label: '传统菜系' },
         { value: '2', label: '套餐' },
         { value: '1', label: '单品' },
     ];
@@ -66,13 +72,13 @@ export default class extends Vue {
         name: '',
         type: '',
         image: '',
-        description:'',
+        description: '',
         show: '',
     } as {
         name: string,
         type: string,
         image: string,
-        description:string,
+        description: string,
         show: string,
     }
 
@@ -84,7 +90,7 @@ export default class extends Vue {
 
     private type = true;
     private id;
-    private imageUrl;
+    private imageUrl = '';
 
     mounted() {
         // 在这里执行初始化逻辑，例如获取数据
@@ -103,7 +109,7 @@ export default class extends Vue {
         queryCategoryById(val).then(res => {
             if (res.data.code === 1) {
                 this.addCategory.name = res.data.data.name;
-                this.addCategory.show = res.data.data.type === 1 ? '单品' : (res.data.data.type=== 2 ? '套餐':'传统菜系');
+                this.addCategory.show = res.data.data.type === 1 ? '单品' : '套餐';
                 this.addCategory.image = res.data.data.image;
                 this.addCategory.description = res.data.data.description;
                 this.imageUrl = res.data.data.image;
@@ -145,11 +151,11 @@ export default class extends Vue {
     async handleAddCate() {
         //构建参数
         const addparam =
-            { name: this.addCategory.name, type: this.addCategory.type, image: this.addCategory.image,description:this.addCategory.description }
+            { name: this.addCategory.name, type: this.addCategory.type, image: this.addCategory.image, description: this.addCategory.description }
 
         const modifyparam =
-            { id: this.id, name: this.addCategory.name, type: this.addCategory.type, image: this.addCategory.image,description:this.addCategory.description }
-        
+            { id: this.id, name: this.addCategory.name, type: this.addCategory.type, image: this.addCategory.image, description: this.addCategory.description }
+
         if (this.type) {
             await addCategory(addparam).then(res => {
                 this.handleSuccess("添加成功");
@@ -168,4 +174,16 @@ export default class extends Vue {
 }
 </script>
 
-<style></style>
+<style>
+.backSpan:hover {
+    color: #ff5722;
+}
+
+.addCateForm {
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    left: 500px
+}
+</style>

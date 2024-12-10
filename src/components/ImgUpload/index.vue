@@ -1,12 +1,12 @@
 <!--  -->
 <template>
 
-  <div class="upload-item">
+  <div class="upload-item" style="z-index: 101;">
     <el-upload ref="uploadfiles" action="/api/common/upload" :show-file-list="false" :on-success="handleAvatarSuccess"
       :on-error="handleError" :before-upload="beforeAvatarUpload">
       <img v-if="imageUrl" :src="imageUrl" class="avatar">
 
-      <i v-else class="el-icon-plus avatar-uploader-icon" />
+      <i v-else style="width: 200px;height: 160px;background-color: #c4edde;" class="el-icon-plus avatar-uploader-icon" />
       <span v-if="imageUrl" class="el-upload-list__item-actions">
         <span @click.stop="oploadImgDel">
           删除图片
@@ -40,11 +40,11 @@ export default class extends Vue {
   }
 
   @Watch('propImageUrl')
-  private updateFromFather(val){
-      this.imageUrl = val;
+  private updateFromFather(val) {
+    this.imageUrl = val;
   }
 
-  remove(){
+  remove() {
     this.imageUrl = '';
   }
 
@@ -72,3 +72,11 @@ export default class extends Vue {
   }
 }
 </script>
+
+<style>
+.avatar {
+  width: 200px;
+  height: 160px;
+  display: block;
+}
+</style>

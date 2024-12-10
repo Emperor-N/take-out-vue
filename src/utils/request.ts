@@ -9,10 +9,9 @@ const service = axios.create({
 
 service.interceptors.request.use(
     (config: any) => {
-        
       if (UserModule.token) {
         config.headers['token'] = UserModule.token;
-      } else if (config.url !== '/employee/login') {
+      } else if (config.url !== '/employee/login' && config.url !== '/employee/enroll') {
         window.location.href = '/login';
         return Promise.reject('Redirecting to login');
       }

@@ -22,7 +22,7 @@ export const queryCategoryById = (id: number) =>
   })
 
 // 分页查询
-export const getCategoryList = (params: any) =>
+export const getCategoryPage = (params: any) =>
   request({
     'url': `/category/page`,
     'method': 'GET',
@@ -30,11 +30,19 @@ export const getCategoryList = (params: any) =>
   })
 
 //条件分页查询
-export const getCategoryListByMsg = (params: any) =>
+export const getCategoryPageByMsg = (params: any) =>
   request({
     'url': `/category/search`,
     'method': 'POST',
     'data': params
+  })
+
+// 分页查询
+export const dishCategoryList = (params: any) =>
+  request({
+    'url': `/category/list`,
+    'method': 'GET',
+    'params': params
   })
 
 //批量删除

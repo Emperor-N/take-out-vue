@@ -12,6 +12,9 @@ import categoryView from '@/views/category/categoryView.vue'
 import loginView from '@/views/login/loginView.vue'
 import modifypwView from '@/views/modifypwView.vue'
 import AddCategory from '@/views/category/addCategory.vue'
+import addSetmealView from '@/views/setmeal/addSetmealView.vue'
+import enrollView from '@/views/enrollView.vue'
+import addDishView from '@/views/dish/addDish.vue'
 
 Vue.use(VueRouter)
 
@@ -20,6 +23,11 @@ const routes: Array<RouteConfig> = [
     path: '/',
     name: 'login',
     component: loginView
+  },
+  {
+    path: '/enroll',
+    name: 'enroll', 
+    component: enrollView
   },
   {
     path: '/main',
@@ -48,9 +56,19 @@ const routes: Array<RouteConfig> = [
         component: dishView
       },
       {
+        path: '/dish/add',
+        name: 'addDish', 
+        component: addDishView
+      },
+      {
         path: '/setmeal',
         name: 'setmeal', 
         component: setmealView
+      },
+      {
+        path: '/setmeal/add',
+        name: 'addSetmeal', 
+        component: addSetmealView
       },
       {
         path: '/category',

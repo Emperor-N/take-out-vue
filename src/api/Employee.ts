@@ -63,6 +63,14 @@ export const addEmployee = (params: any) =>
     'data': params
   })
 
+  // 新增员工
+export const enrollEmployee = (params: any) =>
+  request({
+    'url': '/employee/enroll',
+    'method': 'POST',
+    'data': params
+  })
+
 // 修改员工
 export const modifyEmployee = (params: any) =>
   request({

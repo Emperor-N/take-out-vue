@@ -1,7 +1,7 @@
 <template>
     <div>
         <el-container>
-            <el-header>
+            <el-header style="border-radius: 10px;background-color: #0bf1af;">
                 <div style="float: left;">
                     <label style="margin-left: 20px;margin-right: 20px;">
                         分类状态：
@@ -20,7 +20,7 @@
                             type="daterange" start-placeholder="开始日期" end-placeholder="结束日期"
                             style="width: 25%; margin-left: 10px" />
                     </label>
-                    <el-button type="primary" @click="search">搜索</el-button>
+                    <el-button type="primary" @click="search" style="border-radius: 10px;width: 100px;">搜索</el-button>
                 </div>
                 <div style="float: right;">
                     <el-button type="danger" @click="handleDelete('批量', 0)">批量删除</el-button>
@@ -28,21 +28,22 @@
                 </div>
             </el-header>
             <el-main>
-                <el-table ref="multipleTable" :data="record" tooltip-effect="dark" style="width: 100%"
-                    @selection-change="handleSelectionChange">
+                <el-table ref="multipleTable" :data="record" tooltip-effect="dark"
+                    style="width: 100 ;box-shadow: 0 5px 12px 0 rgba(0, 0, 0, 0.3)"
+                    @selection-change="handleSelectionChange" v-loading="loading" class="tableShow">
                     <el-table-column type="selection" width="55"></el-table-column>
                     <el-table-column prop="name" label="分类名"></el-table-column>
                     <el-table-column prop="type" label="所属分类">
                         <template slot-scope="scope">
                             <div>
-                                {{ String(scope.row.type) === '1' ? '单品' : String(scope.row.type)=== '2' ? '套餐' : '传统菜系' }}
+                                {{ String(scope.row.type) === '1' ? '单品' : '套餐' }}
                             </div>
                         </template>
                     </el-table-column>
                     <el-table-column prop="status" label="分类状态">
                         <template slot-scope="scope">
                             <div>
-                                {{ String(scope.row.status) === '0' ? '停售' : '启售' }}
+                                {{ String(scope.row.status) === '0' ? '停售' : '起售' }}
                             </div>
                         </template>
                     </el-table-column>
@@ -53,25 +54,34 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="description" label="描述"></el-table-column>
-                    <el-table-column prop="createTime" label="创建时间"></el-table-column>
-                    <el-table-column prop="updateTime" label="更新时间"></el-table-column>
-                    <el-table-column prop="createUser" label="创建者"></el-table-column>
-                    <el-table-column prop="updateUser" label="更新者"></el-table-column>
+                    <el-table-column prop="createTime" label="创建时间" :formatter="formatDate"></el-table-column>
+                    <el-table-column prop="updateTime" label="更新时间" :formatter="formatDate"></el-table-column>
+                    <el-table-column prop="createUserName" label="创建者"></el-table-column>
+                    <el-table-column prop="updateUserName" label="更新者"></el-table-column>
                     <el-table-column label="操作" width="250" align="center">
                         <template slot-scope="scope">
-                            <el-button type="text" size="small" class="blueBug" @click="modifyCatetype(scope.row.id)">
+                            <el-button style="color:#67C23A" type="text" size="small" class="blueBug"
+                                @click="modifyCatetype(scope.row.id)">
                                 修改
                             </el-button>
-                            <el-button type="text" size="small" class="delBut"
-                                @click="handleDelete('单删', scope.row.id)">
+                            <el-button style="color:#F56C6C" type="text" size="small" class="delBut"
+                                @click="openDialog">
+                                <!-- handleDelete('单删', scope.row.id) -->
                                 删除
                             </el-button>
-                            <el-button type="text" size="small" class="non" :class="{
+                            <el-button style="color:#E6A23C" type="text" size="small" class="non" :class="{
                                 blueBug: scope.row.status == '0',
                                 delBut: scope.row.status != '0'
                             }" @click="statusHandle(scope.row)">
-                                {{ scope.row.status == '0' ? '启用' : '停用' }}
+                                {{ scope.row.status == '0' ? '起售' : '停售' }}
                             </el-button>
+                            <el-dialog style="box-shadow: 0 5px 12px 0 rgba(0, 0, 0, 0.4)" title="删除提示" :visible.sync="dialogVisible" width="20%" :before-close="handleClose">
+                                <span style="color: #F56C6C;">正在执行删除记录...</span>
+                                <span slot="footer" class="dialog-footer">
+                                    <el-button @click="dialogVisible = false">取 消</el-button>
+                                    <el-button type="primary" @click="handleDelete('单删', scope.row.id)">确 定</el-button>
+                                </span>
+                            </el-dialog>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -89,7 +99,7 @@
 
 import { Vue, Watch } from 'vue-property-decorator'
 import Component from 'vue-class-component';
-import { getCategoryList, deleteByIds,getCategoryListByMsg,enableOrDisableCategory } from '@/api/Category'
+import { getCategoryPage, deleteByIds, getCategoryPageByMsg, enableOrDisableCategory } from '@/api/Category'
 
 @Component
 export default class extends Vue {
@@ -102,17 +112,20 @@ export default class extends Vue {
         description: string,
         createTime: string,
         updateTime: string,
-        updateUser: string,
+        createUserName: string;
+        updateUser: string;
+        updateUserName: string;
         createUser: string
     }[] = [];
 
     private options = [
-        { value: '选项1', label: '启用' },
+        { value: '选项1', label: '起售' },
         { value: '选项2', label: '停售' }
     ];
     private status = '';
     private name = '';
     private date = '';
+    private loading = true;
 
     private page = 0;
     private pageSize = 10;
@@ -120,34 +133,59 @@ export default class extends Vue {
     private total = 0;
     private sizeList = [10, 20, 30, 40, 50];
     private tempSearchParam = {
-        name:'',
-        status:'',
-        date:'',
+        name: '',
+        status: '',
+        date: '',
+    }
+    private dialogVisible = false;
+
+    openDialog(){
+        this.dialogVisible = true;
+    }
+
+    handleClose(){
+        this.dialogVisible = false;
     }
 
     mounted() {
         this.init();
     }
 
-    public init() {
-        this.page = 1;
-        this.pageQuery();
-        this.putTempSearchParam();
+    formatDate(row, column) {
+        let date = row[column.property];
+        if (date != null) {
+            let dt = new Date(date);
+            let month = dt.getMonth()
+            return dt.getFullYear() + '-' + (month + 1) + '-' + dt.getDate();
+        } else {
+            return null
+        }
     }
 
-    setTempSearchParam(){
+    init() {
+        this.loading = true;
+        setTimeout(() => {
+            this.page = 1;
+            this.pageQuery();
+            this.putTempSearchParam();
+            this.loading = false;
+        }, 500)
+    }
+
+    setTempSearchParam() {
         this.tempSearchParam.date = this.date;
         this.tempSearchParam.status = this.status;
         this.tempSearchParam.name = this.name;
     }
 
-    putTempSearchParam(){
+    putTempSearchParam() {
         this.date = this.tempSearchParam.date;
         this.status = this.tempSearchParam.status;
         this.name = this.tempSearchParam.name;
     }
 
-    handleDelete(msg,id) {
+    handleDelete(msg, id) {
+        this.dialogVisible = false;
         if (msg === '单删') {
             let ids: number[] = [id];
             deleteByIds(ids).then(() => {
@@ -155,7 +193,7 @@ export default class extends Vue {
                 this.init();
             })
         } else {
-            deleteByIds(this.ids).then(() => { 
+            deleteByIds(this.ids).then(() => {
                 this.handleSuccess('删除成功');
                 this.init();
             }).catch(() => {
@@ -165,7 +203,7 @@ export default class extends Vue {
     }
 
     modifyCatetype(val: any) {
-        this.goToAddCategory('修改',val);
+        this.goToAddCategory('修改', val);
     }
 
     goToAddCategory(type: any, id: any) {
@@ -209,8 +247,8 @@ export default class extends Vue {
     search() {
         this.setTempSearchParam()
         //构建参数
-        const param = ({ status: this.status === '启用' ? 1 : 0, name: this.name, startTime: this.date[0], endTime: this.date[1], page: this.page, pageSize: this.pageSize })
-        getCategoryListByMsg(param).then(res => {
+        const param = ({ status: this.status === '停售' ? 0 : 1, name: this.name, startTime: this.date[0], endTime: this.date[1], page: this.page, pageSize: this.pageSize })
+        getCategoryPageByMsg(param).then(res => {
             if (res.data.code === 1) {
                 this.total = res.data.data.total;
                 this.record = res.data.data.record;
@@ -223,7 +261,7 @@ export default class extends Vue {
         })
     }
 
-    removeSearchParam(){
+    removeSearchParam() {
         this.date = '';
         this.name = '';
         this.status = '';
@@ -234,16 +272,16 @@ export default class extends Vue {
         const param = { page: this.page, pageSize: this.pageSize }
         //发送请求
 
-        if(this.status != '' || this.name != '' || this.date != ''){
+        if (this.status != '' || this.name != '' || this.date != '') {
             this.search()
-        }else{
-            getCategoryList(param).then(res => {
-            if (res.data.code == 1) {
-                this.total = res.data.data.total;
-                this.record = res.data.data.record;
-            }
-        });
-        } 
+        } else {
+            getCategoryPage(param).then(res => {
+                if (res.data.code == 1) {
+                    this.total = res.data.data.total;
+                    this.record = res.data.data.record;
+                }
+            });
+        }
     }
 
     handleSelectionChange(val: any) {

@@ -1,25 +1,31 @@
 <template>
     <div>
         <el-container>
-            <el-header>
+            <el-header style="border-radius: 10px;background-color: #0bf1af;">
                 <div style="float: left;">
-                    <el-button @click="backToMain" type="info">&lt;&lt;返回</el-button>
+                    <span class="backSpan" @click="backToMain" type="info">&lt;&lt;返回 </span>
+                    <span style="font-size: 15px;color: black;"> | 修改密码</span>
                 </div>
             </el-header>
-            <el-main>
-                <el-form label-width="80px" :model="modifyPassword">
-                    <el-form-item label="旧密码" prop="username">
+            <el-main style="border: 3px #0bf1af solid;height: 80vh;">
+                <el-form label-width="80px" :model="modifyPassword" class="modifyForm">
+                    <el-form-item label="旧密码:" prop="oldPassword" style="width: 500px;color: black;">
                         <el-input type="password" v-model="modifyPassword.oldPassword"></el-input>
                     </el-form-item>
-                    <el-form-item label="新密码" prop="username">
+                    <el-form-item class="item" label="新密码:" prop="newPassword" style="width: 500px;">
                         <el-input type="password" v-model="modifyPassword.newPassword"></el-input>
                     </el-form-item>
-                    <el-form-item label="确定密码" prop="username">
+                    <el-form-item class="item" label="确定密码:" prop="certainPassword" style="width: 500px;z-index: 100;">
                         <el-input type="password" v-model="modifyPassword.certainPassword"></el-input>
                     </el-form-item>
-                    <el-button type="primary" @click="modifypw">
-                        <span>修改</span>
-                    </el-button>
+                    <div style="position: relative;left: -20px;top: -50px;z-index: 99;">
+                        <el-button type="primary" @click="modifypw" style="width: 100px;">
+                            <span>修改</span>
+                        </el-button>
+                        <el-button type="primary" @click="deleteData" style="width: 100px;">
+                            <span>全部清空</span>
+                        </el-button>
+                    </div>
                 </el-form>
             </el-main>
         </el-container>
@@ -43,6 +49,12 @@ export default class extends Vue {
         oldPassword: string,
         newPassword: string,
         certainPassword: string
+    }
+
+    deleteData(){
+        this.modifyPassword.oldPassword = '';
+        this.modifyPassword.newPassword = '';
+        this.modifyPassword.certainPassword = '';
     }
 
     handleSuccess(msg) {
@@ -84,3 +96,17 @@ export default class extends Vue {
 
 }
 </script>
+
+<style scoped>
+.backSpan:hover {
+    color: #ff5722;
+}
+
+.modifyForm {
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    left: 500px;
+}
+</style>
