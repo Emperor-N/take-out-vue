@@ -66,3 +66,11 @@ export const orderReject = (params: any) => {
     data: { ...params }
   })
 }
+
+// 查看接口
+export const queryOrderDetailById = (params: any) => {
+  return request({
+    url: `/order/details/${params.orderId}`,
+    method: 'get'
+  })
+}

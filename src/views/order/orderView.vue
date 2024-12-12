@@ -59,7 +59,8 @@
                     <template slot-scope="{ row }">
                         <!-- <el-divider direction="vertical" /> -->
                         <div class="before" style="width: 40px;">
-                            <el-button v-if="row.status === 2" style="color:#67C23A" type="text" class="blueBug" @click="orderAccept(row)">
+                            <el-button v-if="row.status === 2" style="color:#67C23A" type="text" class="blueBug"
+                                @click="orderAccept(row)">
                                 接单
                             </el-button>
                             <el-button v-if="row.status === 3" style="color:#67C23A" type="text" class="blueBug"
@@ -73,19 +74,167 @@
                         </div>
                         <div class="middle" style="width: 40px;">
                             <el-button v-if="row.status === 2" style="color:#F56C6C" type="text" class="delBut"
-                                @click="orderReject(row), (isTableOperateBtn = true)">
+                                @click="rejectOrder(row)">
                                 拒单
                             </el-button>
-                            <el-button v-if="[1, 3, 4, 5].includes(row.status)" style="color:#F56C6C" type="text" class="delBut"
-                                @click="cancelOrder(row)">
+                            <el-button v-if="[1, 3, 4, 5].includes(row.status)" style="color:#F56C6C" type="text"
+                                class="delBut" @click="cancelOrder(row)">
                                 取消
                             </el-button>
                         </div>
                         <div class="after" style="width: 40px;">
-                            <el-button type="text" class="blueBug non" style="color:#E6A23C" @click="goToDetail(row.id, row.status, row)">
+                            <el-button type="text" class="blueBug non" style="color:#E6A23C"
+                                @click="goToDetail(row.id, row.status, row)">
                                 查看
                             </el-button>
                         </div>
+
+                        <!-- 取消展示框 -->
+                        <el-dialog title="取消" :visible.sync="cancelDialogVisible" width="30%"
+                            :before-close="handleCancelClose">
+                            <span>选择取消原因</span>
+
+                            <el-form :model="cancelReason">
+                                <el-form-item :label="'取消原因：'">
+                                    <el-select v-model="cancelReason" :placeholder="'请选择取消原因'">
+                                        <el-option v-for="(item, index) in RejectReasonList" :key="index"
+                                            :label="item.label" :value="item.label" />
+                                    </el-select>
+                                </el-form-item>
+                            </el-form>
+
+                            <span slot="footer" class="dialog-footer">
+                                <el-button @click="cancelDialogVisible = false">取 消</el-button>
+                                <el-button type="primary" @click="doCancel">确 定</el-button>
+                            </span>
+                        </el-dialog>
+
+                        <!-- 拒单展示框 -->
+                        <el-dialog title="拒单" :visible.sync="rejectDialogVisible" width="30%"
+                            :before-close="handleRejectClose">
+                            <span>选择拒单原因</span>
+
+                            <el-form :model="rejectReason">
+                                <el-form-item :label="'拒单原因：'">
+                                    <el-select v-model="cancelReason" :placeholder="'请选择拒单原因'">
+                                        <el-option v-for="(item, index) in cancelOrderReasonList" :key="index"
+                                            :label="item.label" :value="item.label" />
+                                    </el-select>
+                                </el-form-item>
+                            </el-form>
+
+                            <span slot="footer" class="dialog-footer">
+                                <el-button @click="rejectDialogVisible = false">取 消</el-button>
+                                <el-button type="primary" @click="doReject">确 定</el-button>
+                            </span>
+                        </el-dialog>
+
+                        <!-- 查看详情展示框-->
+                        <el-dialog clearable title="查看" :visible.sync="detailVisible" width="80%"
+                            :before-close="handleDetailClose">
+                            <el-header class="el-dialog__header">
+                                <div style="text-align: center; font-weight: bold;">
+                                    <span class="userDivSpan">订单号:</span>
+                                    <span>{{ dialogData.number }}</span>
+                                </div>
+                            </el-header>
+                            <el-container>
+                                <el-main>
+                                    <div class="order-info-section"  style="background-color: red;">
+                                        <!--用户信息div-->
+                                        <div class="user-info-div">
+                                            <span class="userDivSpan">收货人:</span>
+                                            <span class="userMsgDivSpan">{{ dialogData.consignee }}</span>
+                                        </div>
+                                        <div class="user-info-div">
+                                            <span class="userDivSpan">地址:</span>
+                                            <span>{{ dialogData.address }}</span>
+                                        </div>
+                                        <div class="user-info-div">
+                                            <span class="userDivSpan">手机号:</span>
+                                            <span>{{ dialogData.phone }}</span>
+                                        </div>
+                                        <div class="user-info-div">
+                                            <span class="userDivSpan">备注:</span>
+                                            <span>{{ dialogData.remark }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="order-info-section" style="background-color: green;">
+                                        <div class="order-info-section-left">
+                                            <!-- 展示订单号、下单时间等信息 -->
+                                            <div class="user-info-div">
+                                                <span class="userDivSpan">订单号:</span>
+                                                <span>{{ dialogData.number }}</span>
+                                            </div>
+                                            <div class="user-info-div">
+                                                <span class="userDivSpan">下单时间:</span>
+                                                <span>{{ dialogData.orderTime }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="order-info-section-right">
+                                            <!-- 展示付款状态、付款时间、付款方式等信息 -->
+                                            <div style="float: right;">
+                                                <span class="userDivSpan">付款状态:</span>
+                                                <span>{{ dialogData.payStatus === 0 ? '未支付' : dialogData.payStatus === 1 ?
+                                                    '已支付' : '退款' }}</span>
+                                            </div>
+                                            <div class="user-info-div">
+                                                <span class="userDivSpan">付款时间:</span>
+                                                <span>{{ dialogData.checkoutTime }}</span>
+                                            </div>
+                                            <div class="user-info-div">
+                                                <span class="userDivSpan">付款方式:</span>
+                                                <span>{{ dialogData.payMethod === 1 ? '微信支付' : '支付宝' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="background-color: #E6A23C;">
+                                        <!--订单菜品信息div-->
+                                        <div class="dish-list">
+                                            <div v-for="(item, index) in dialogData.orderDetailList" :key="index"
+                                                class="dish-item">
+                                                <div class="dish-name">{{ item.name }}</div>
+                                                <div class="dish-num">x{{ item.number }}</div>
+                                                <div class="dish-price">￥{{ item.amount ? item.amount.toFixed(2) : '' }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="user-info-div">
+                                            <span class="userDivSpan">总金额:</span>
+                                            <span>￥{{ dialogData.amount }}</span>
+                                        </div>
+                                    </div>
+                                </el-main>
+                                <el-footer class="el-dialog__footer">
+                                    <div class="operation-btn-div"
+                                        style="width: 40px;display:inline;margin-right: 50px;">
+                                        <el-button v-if="row.status === 2" style="color:#67C23A" type="text"
+                                            class="blueBug" @click="orderAccept(row)">
+                                            接单
+                                        </el-button>
+                                        <el-button v-if="row.status === 3" style="color:#67C23A" type="text"
+                                            class="blueBug" @click="DeliveryOrComplete(3, row.id)">
+                                            派送
+                                        </el-button>
+                                        <el-button v-if="row.status === 4" style="color:#67C23A" type="text"
+                                            class="blueBug" @click="DeliveryOrComplete(4, row.id)">
+                                            完成
+                                        </el-button>
+                                    </div>
+                                    <div class="operation-btn-div" style="width: 40px;display:inline;">
+                                        <el-button v-if="row.status === 2" style="color:#F56C6C" type="text"
+                                            class="delBut" @click="rejectOrder(row)">
+                                            拒单
+                                        </el-button>
+                                        <el-button v-if="[1, 3, 4, 5].includes(row.status)" style="color:#F56C6C"
+                                            type="text" class="delBut" @click="cancelOrder(row)">
+                                            取消
+                                        </el-button>
+                                    </div>
+                                </el-footer>
+                            </el-container>
+                        </el-dialog>
+
                     </template>
                 </el-table-column>
             </el-table>
@@ -98,7 +247,7 @@
 <script lang="ts">
 import { Vue, Watch } from 'vue-property-decorator'
 import Component from 'vue-class-component';
-import { getOrderDetailPage, getNumberOfStatus, orderAccept, deliveryOrder, completeOrder } from '@/api/Order'
+import { getOrderDetailPage, getNumberOfStatus, orderAccept, deliveryOrder, completeOrder, orderCancel, orderReject, queryOrderDetailById } from '@/api/Order'
 import TabChange from './tableChangeView.vue'
 import { Loading } from 'element-ui';
 
@@ -125,6 +274,126 @@ export default class extends Vue {
     private page = 1;
     private pageSize = 10;
     private total = 0;
+
+    private id;
+
+    private cancelDialogVisible = false;
+    private rejectDialogVisible = false;
+    private detailVisible = false;
+
+    private cancelReason = '';
+    private rejectReason = '';
+
+    private dialogData = [];
+
+    private cancelOrderReasonList = [
+        {
+            value: 1,
+            label: '订单量较多，暂时无法接单',
+        },
+        {
+            value: 2,
+            label: '菜品已销售完，暂时无法接单',
+        },
+        {
+            value: 3,
+            label: '餐厅已打烊，暂时无法接单',
+        },
+        {
+            value: 0,
+            label: '自定义原因',
+        },
+    ]
+
+    private RejectReasonList = [
+        {
+            value: 1,
+            label: '订单量较多，暂时无法接单',
+        },
+        {
+            value: 2,
+            label: '菜品已销售完，暂时无法接单',
+        },
+        {
+            value: 3,
+            label: '骑手不足无法配送',
+        },
+        {
+            value: 4,
+            label: '客户电话取消',
+        },
+        {
+            value: 0,
+            label: '自定义原因',
+        },
+    ]
+
+    doCancel() {
+        // 构建参数
+        const param = ({
+            id: this.id,
+            cancelReason: this.cancelReason
+        })
+        this.id = null;
+        this.cancelReason = '';
+        orderCancel(param).then((res) => {
+            if (res.data.code === 1) {
+                this.handleSuccess("取消成功")
+            }
+        })
+        this.cancelDialogVisible = false;
+        this.init(this.currentStatus);
+    }
+
+    doReject() {
+        // 构建参数
+        const param = ({
+            id: this.id,
+            rejectionReason: this.rejectReason
+        })
+        this.id = null;
+        this.rejectReason = '';
+        orderReject(param).then((res) => {
+            if (res.data.code === 1) {
+                this.handleSuccess("拒单成功")
+            }
+        })
+        this.rejectDialogVisible = false;
+        this.init(this.currentStatus);
+    }
+
+    async goToDetail(id: any, status: number, row?: any) {
+        const { data } = await queryOrderDetailById({ orderId: id })
+        this.dialogData = data.data
+        this.detailVisible = true;
+    }
+
+    cancelOrder(row: any) {
+        this.cancelDialogVisible = true;
+        this.id = row.id;
+    }
+
+    rejectOrder(row: any) {
+        this.rejectDialogVisible = true;
+        this.id = row.id;
+    }
+
+    handleCancelClose(done) {
+        done();
+        this.cancelDialogVisible = false;
+        this.cancelReason = '';
+    }
+    handleRejectClose(done) {
+        done();
+        this.rejectDialogVisible = false;
+        this.rejectReason = '';
+    }
+
+    handleDetailClose(done) {
+        done();
+        this.detailVisible = false;
+        this.dialogData = [];
+    }
 
     mounted() {
         this.init(this.currentStatus)
@@ -283,10 +552,95 @@ export default class extends Vue {
 
 <style lang="scss">
 .tableBox {
-    .cell {
+   .cell {
         display: flex;
         align-items: center;
         justify-content: center;
     }
+}
+
+.userDivSpan {
+    border-radius: 5px;
+    background-color: #0bf1af;
+    display: inline-flex;
+    align-items: center; 
+    justify-content: center; 
+    width: 150px;
+    height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+    color: #333;
+    overflow: hidden;
+}
+
+.chDiv{
+    height: 50px;
+}
+
+.user-info-div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    height: 50px;
+}
+
+.order-info-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.order-info-section-left {
+    width: 40%;
+    height:50px;
+}
+
+.order-info-section-right {
+    width: 60%;
+    height:100px;
+}
+
+.dish-list {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.dish-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    height: 100px;
+}
+
+.el-dialog__header {
+    background-color: #f0f0f0;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.el-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+}
+
+.operation-btn-div {
+    margin-left: 10px;
+}
+
+.el-dialog {
+    border: 1px solid #ccc;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+.el-dialog__title {
+    color: #666;
 }
 </style>
